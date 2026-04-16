@@ -1,0 +1,163 @@
+﻿@page "/"
+@using System.Timers
+@implements IDisposable
+
+<PageTitle>Мои Тренировки</PageTitle>
+
+<div class="container py-4">
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold text-primary">Фитнес-Инструктор 🏋️‍♂️</h1>
+        <p class="text-muted">Выберите программу и начните движение к цели</p>
+    </div>
+
+    @* Панель активного таймера *@
+    @if (activeWorkout != null)
+    {
+        <div class="row justify-content-center mb-5">
+            <div class="col-md-8">
+                <div class="card border-0 shadow-lg bg-dark text-white text-center p-4">
+                    <h3 class="text-warning">@activeWorkout.Name</h3>
+
+                    @* ТУТ ПОКАЗЫВАЕМ ТЕКУЩЕЕ УПРАЖНЕНИЕ *@
+                    <div class="py-2">
+                        <h4 class="text-info">Упражнение: @currentExerciseName</h4>
+                        <h1 class="display-1 fw-bold font-monospace">@FormatTime(timeLeft)</h1>
+                    </div>
+
+                    <div class="progress mt-3" style="height: 10px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning"
+                             role="progressbar"
+                             style="width: @(CalculateProgress())%"></div>
+                    </div>
+                    <div class="mt-4">
+                        <button class="btn btn-outline-light me-2" @onclick="StopWorkout">Сброс</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* Список тренировок *@
+    <div class="row g-4">
+        @foreach (var workout in workouts)
+        {
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden">
+                    <div style="height: 200px; overflow: hidden;">
+                        <img src="@workout.ImageUrl" class="w-100 h-100" style="object-fit: cover;" alt="@workout.Name">
+                    </div>
+
+                    <div class="card-body d-flex flex-column p-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="badge bg-info-subtle text-info px-3">@workout.Level</span>
+                            <span class="fw-bold text-muted">⏱ @workout.Minutes мин</span>
+                        </div>
+                        <h4 class="card-title fw-bold">@workout.Name</h4>
+                        <p class="card-text text-secondary flex-grow-1 small">@workout.Description</p>
+
+                        @* Список того, что входит в тренировку *@
+                        <div class="mt-2 mb-3">
+                            <small class="text-muted">В программе: @string.Join(", ", workout.Exercises.Select(e => e.Name))</small>
+                        </div>
+
+                        <button class="btn btn-primary rounded-pill w-100 mt-auto py-2"
+                                @onclick="() => StartWorkout(workout)"
+                                disabled="@(activeWorkout != null)">
+                            @(activeWorkout == null ? "Начать" : "Занято")
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<WorkoutItem> workouts = new()
+    {
+        new WorkoutItem("Разминка", "Подготовка суставов и разогрев мышц.", 2, "Легко", "images/zoska.jpg", new() {
+            new("Вращение головой", 30),
+            new("Махи руками", 30),
+            new("Наклоны", 30),
+            new("Приседания", 30)
+        }),
+        new WorkoutItem("Стальной Пресс", "Комплекс на мышцы живота.", 10, "Средне", "images/press.jpg", new() {
+            new("Скручивания", 60),
+            new("Планка", 60),
+            new("Велосипед", 60)
+        }),
+        new WorkoutItem("Интенсив", "Кроссфит-элементы.", 20, "Профи", "images/razminka.jpg", new() {
+            new("Берпи", 60),
+            new("Прыжки", 60)
+        })
+    };
+
+    private WorkoutItem? activeWorkout;
+    private int timeLeft;
+    private int
+totalTime;
+    private string currentExerciseName = "";
+    private Timer? timer;
+
+    private void StartWorkout(WorkoutItem workout)
+    {
+        activeWorkout = workout;
+        // Считаем общее время на основе списка упражнений (в секундах)
+        totalTime = workout.Exercises.Sum(e => e.Duration);
+        timeLeft = totalTime;
+
+        UpdateExerciseName();
+
+        timer?.Dispose();
+        timer = new Timer(1000);
+        timer.Elapsed += async (s, e) =>
+        {
+            if (timeLeft > 0)
+            {
+                timeLeft--;
+                UpdateExerciseName();
+                await InvokeAsync(StateHasChanged);
+            }
+            else
+            {
+                StopWorkout();
+            }
+        };
+        timer.Start();
+    }
+
+    private void UpdateExerciseName()
+    {
+        if (activeWorkout == null) return;
+
+        int elapsed = totalTime - timeLeft;
+        int accumulated = 0;
+
+        foreach (var ex in activeWorkout.Exercises)
+        {
+            accumulated += ex.Duration;
+            if (elapsed < accumulated)
+            {
+                currentExerciseName = ex.Name;
+                break;
+            }
+        }
+    }
+
+    private void StopWorkout()
+    {
+        timer?.Stop();
+        activeWorkout = null;
+        StateHasChanged();
+    }
+
+    private string FormatTime(int seconds) => TimeSpan.FromSeconds(seconds).ToString(@"mm\:ss");
+
+    private double CalculateProgress() => totalTime == 0 ? 0 : ((double)(totalTime - timeLeft) / totalTime) * 100;
+
+    public void Dispose() => timer?.Dispose();
+
+    // Обновленные модели
+    public record WorkoutItem(string Name, string Description, int Minutes, string Level, string ImageUrl, List<ExerciseStep> Exercises);
+    public record ExerciseStep(string Name, int Duration);
+}

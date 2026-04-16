@@ -1,0 +1,45 @@
+﻿@page "/exercises"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize] // Сделаем эту страницу доступной только для авторизованных
+
+<PageTitle>Мои Упражнения</PageTitle>
+
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold text-success">Библиотека Упражнений 💪</h1>
+        <p class="text-muted">Изучайте технику и совершенствуйтесь</p>
+    </div>
+
+    <div class="row g-4">
+        @foreach (var exercise in exercises)
+        {
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden">
+                    <img src="@exercise.ImageUrl" class="card-img-top img-fluid" alt="@exercise.Name" style="height: 200px; object-fit: cover; background-color: #f0f0f0;">
+                    <div class="card-body p-4 d-flex flex-column">
+                        <span class="badge bg-secondary-subtle text-secondary mb-2 align-self-start">@exercise.Category</span>
+                        <h5 class="card-title fw-bold">@exercise.Name</h5>
+                        <p class="card-text text-muted flex-grow-1">@exercise.Description</p>
+                        <div class="mt-auto pt-3 border-top text-center">
+                            <small class="text-info fw-bold">Повторений: @exercise.Reps</small>
+                            <small class="text-info fw-bold ms-3">Подходов: @exercise.Sets</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<ExerciseItem> exercises = new()
+    {
+        new("Отжимания", "Классические отжимания от пола для груди и трицепсов.", "Верх тела", 10, 3, "images/pushup.jpg"),
+        new("Приседания", "Базовое упражнение для развития мышц ног и ягодиц.", "Ноги", 12, 3, "images/squat.jpg"),
+        new("Планка", "Статическое упражнение для укрепления кора и пресса.", "Кор", 60, 1, "images/plank.jpg"),
+        new("Выпады", "Укрепление квадрицепсов, бицепсов бедра и ягодиц.", "Ноги", 10, 3, "images/lunges.jpg"),
+        new("Подтягивания", "Развитие широчайших мышц спины и бицепсов.", "Верх тела", 8, 3, "images/pullup.jpg")
+    };
+
+    public record ExerciseItem(string Name, string Description, string Category, int Reps, int Sets, string ImageUrl);
+}

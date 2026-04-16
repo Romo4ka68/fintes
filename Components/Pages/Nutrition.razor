@@ -1,0 +1,117 @@
+﻿@page "/nutrition"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+
+<PageTitle>План питания и Вода</PageTitle>
+
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold text-warning">Рацион питания 🍎</h1>
+        <p class="text-muted">Сбалансированное меню и трекер воды</p>
+    </div>
+
+    @* --- БЛОК ТРЕКЕРА ВОДЫ --- *@
+    <div class="row justify-content-center mb-5">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-lg bg-primary text-white p-4 rounded-4">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h3 class="mb-1">Трекер воды 💧</h3>
+                        <p class="mb-0 opacity-75">Цель: 2000 мл (8 стаканов)</p>
+                    </div>
+                    <div class="text-end">
+                        <h2 class="mb-0">@waterCount / 8</h2>
+                        <small>стаканов</small>
+                    </div>
+                </div>
+
+                <div class="progress mt-3 mb-3" style="height: 20px; background-color: rgba(255,255,255,0.2);">
+                    <div class="progress-bar bg-info progress-bar-striped progress-bar-animated"
+                         role="progressbar"
+                         style="width: @( (waterCount / 8.0) * 100 )%"></div>
+                </div>
+
+                <div class="d-flex justify-content-center gap-2">
+                    <button class="btn btn-light fw-bold text-primary rounded-pill px-4" @onclick="AddGlass" disabled="@(waterCount >= 8)">
+                        + Выпил стакан
+                    </button>
+                    <button class="btn btn-outline-light rounded-pill px-3" @onclick="ResetWater">
+                        Сброс
+                    </button>
+                </div>
+
+                @if (waterCount >= 8)
+                {
+                    <div class="text-center mt-3 animate__animated animate__bounceIn">
+                        <span class="badge bg-success p-2">🎉 Дневная норма выполнена!</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    @* --- ПЛАН ПИТАНИЯ --- *@
+    <div class="row g-4">
+        @foreach (var meal in mealPlan)
+        {
+            <div class="col-md-6">
+                <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden">
+                    <div class="card-header bg-warning bg-opacity-10 border-0 p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h4 class="mb-0 fw-bold text-dark">@meal.TimeOfDay</h4>
+                            <span class="badge bg-warning text-dark px-3">@meal.Calories ккал</span>
+                        </div>
+                    </div>
+                    <div class="card-body p-4">
+                        <h5 class="text-primary fw-bold">@meal.DishName</h5>
+                        <p class="text-secondary small">@meal.Description</p>
+                        <hr />
+                        <div class="row text-center">
+                            <div class="col">
+                                <div class="fw-bold">@meal.Protein г</div>
+                                <div class="small text-muted">Белки</div>
+                            </div>
+                            <div class="col border-start">
+                                <div class="fw-bold">@meal.Fats г</div>
+                                <div class="small text-muted">Жиры</div>
+                            </div>
+                            <div class="col border-start">
+                                <div class="fw-bold">@meal.Carbs г</div>
+                                <div class="small text-muted">Углеводы</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    // Логика трекера воды
+    private int waterCount = 0;
+
+    private void AddGlass()
+    {
+        if (waterCount < 8)
+        {
+            waterCount++;
+        }
+    }
+
+    private void ResetWater()
+    {
+        waterCount = 0;
+    }
+
+    // Данные плана питания
+    private List<MealItem> mealPlan = new()
+    {
+        new("Завтрак", "Овсянка с ягодами", "Цельнозерновые овсяные хлопья, мед, свежая голубика и горсть миндаля.", 350, 12, 8, 55),
+        new("Обед", "Куриное филе с киноа", "Грудка на гриле, киноа с овощами и свежий салат из рукколы.", 550, 45, 12, 60),
+        new("Полдник", "Творог с орехами", "Обезжиренный творог, грецкий орех и немного натурального йогурта.", 250, 25, 10, 15),
+        new("Ужин", "Запеченная рыба", "Филе белой рыбы (треска или сибас) со спаржей и лимонным соусом.", 400, 35, 15, 10)
+    };
+
+    public record MealItem(string TimeOfDay, string DishName, string Description, int Calories, int Protein, int Fats, int Carbs);
+}
